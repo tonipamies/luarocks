@@ -1,6 +1,7 @@
 rem=rem --[[--lua
 @setlocal&  set luafile="%~f0" & if exist "%~f0.bat" set luafile="%~f0.bat"
-@win32\lua5.1\bin\lua5.1.exe %luafile% %*&  exit /b ]]
+@win32\lua5.1\bin\lua5.1.exe %luafile% %*&  exit /b
+rem=rem ]]
 
 local vars = {}
 
