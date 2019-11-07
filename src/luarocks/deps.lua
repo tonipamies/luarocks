@@ -82,17 +82,6 @@ function deps.match_deps(dependencies, rocks_provided, blacklist, deps_mode)
    return matched, missing, no_upgrade
 end
 
---- Return a set of values of a table.
--- @param tbl table: The input table.
--- @return table: The array of keys.
-local function values_set(tbl)
-   local set = {}
-   for _, v in pairs(tbl) do
-      set[v] = true
-   end
-   return set
-end
-
 local function rock_status(name, deps_mode, rocks_provided)
    local installed = match_dep(queries.new(name), nil, deps_mode, rocks_provided)
    local installation_type = rocks_provided[name] and "provided by VM" or "installed"
@@ -129,11 +118,9 @@ function deps.report_missing_dependencies(name, version, dependencies, deps_mode
    end
 end
 
-function deps.fulfill_dependency(dep, deps_mode, name, version, rocks_provided, verify)
+function deps.fulfill_dependency(dep, deps_mode, rocks_provided, verify)
    assert(dep:type() == "query")
    assert(type(deps_mode) == "string" or deps_mode == nil)
-   assert(type(name) == "string" or name == nil)
-   assert(type(version) == "string" or version == nil)
    assert(type(rocks_provided) == "table" or rocks_provided == nil)
    assert(type(verify) == "boolean" or verify == nil)
    deps_mode = deps_mode or "all"
@@ -144,26 +131,12 @@ function deps.fulfill_dependency(dep, deps_mode, name, version, rocks_provided, 
       return true, found, where
    end
 
+   if dep.constraints[1] and dep.constraints[1].no_upgrade then
+      return nil, "Failed matching dependencies", nil, "no_upgrade"
+   end
+
    local search = require("luarocks.search")
    local install = require("luarocks.cmd.install")
-
-   if name and version then
-      util.printout(("%s %s depends on %s (%s)"):format(
-         name, version, tostring(dep), rock_status(dep.name, deps_mode, rocks_provided)))
-   else
-      util.printout(("Fulfilling dependency on %s (%s)"):format(
-         tostring(dep), rock_status(dep.name, deps_mode, rocks_provided)))
-   end
-   
-   if dep.constraints[1] and dep.constraints[1].no_upgrade then
-      util.printerr("This version of "..name.." is designed for use with")
-      util.printerr(tostring(dep)..", but is configured to avoid upgrading it")
-      util.printerr("automatically. Please upgrade "..dep.name.." with")
-      util.printerr("   luarocks install "..dep.name)
-      util.printerr("or choose an older version of "..name.." with")
-      util.printerr("   luarocks search "..name)
-      return nil, "Failed matching dependencies"
-   end
 
    local url, search_err = search.find_suitable_rock(dep, true)
    if not url then
@@ -230,8 +203,23 @@ function deps.fulfill_dependencies(rockspec, depskey, deps_mode, verify)
 
    util.printout()
    for _, dep in ipairs(rockspec[depskey]) do
-      local ok, err = deps.fulfill_dependency(dep, deps_mode, rockspec.name, rockspec.version, rockspec.rocks_provided, verify)
+      local name = rockspec.name
+      local version = rockspec.version
+      local rocks_provided = rockspec.rocks_provided
+
+      util.printout(("%s %s depends on %s (%s)"):format(
+         name, version, tostring(dep), rock_status(dep.name, deps_mode, rocks_provided)))
+
+      local ok, err, _, no_upgrade = deps.fulfill_dependency(dep, deps_mode, rocks_provided, verify)
       if not ok then
+         if no_upgrade then
+            util.printerr("This version of "..name.." is designed for use with")
+            util.printerr(tostring(dep)..", but is configured to avoid upgrading it")
+            util.printerr("automatically. Please upgrade "..dep.name.." with")
+            util.printerr("   luarocks install "..dep.name)
+            util.printerr("or look for a suitable version of "..name.." with")
+            util.printerr("   luarocks search "..name)
+         end
          return nil, err
       end
    end

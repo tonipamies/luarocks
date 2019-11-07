@@ -5,6 +5,7 @@ local fs = require("luarocks.fs")
 local deps = require("luarocks.deps")
 local path = require("luarocks.path")
 local dir = require("luarocks.dir")
+local util = require("luarocks.util")
 local queries = require("luarocks.queries")
 
 local unpack = table.unpack or unpack
@@ -20,6 +21,8 @@ function busted.run_tests(test, args)
    if not test then
       test = {}
    end
+
+   util.printout("Checking that busted is installed...")
 
    local ok, bustedver, where = deps.fulfill_dependency(queries.new("busted"))
    if not ok then
