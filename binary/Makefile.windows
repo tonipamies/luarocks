@@ -1,8 +1,8 @@
 
 # "i686-w64-mingw32" or "x86_64-w64-mingw32"
-MINGW_PREFIX?=i686-w64-mingw32
+MINGW_TRIPLET?=i686-w64-mingw32
 # sysroot of your mingw-w64 installation
-MINGW_SYSROOT=/usr/lib/mingw-w64-sysroot/$(MINGW_PREFIX)
+MINGW_SYSROOT=/usr/lib/mingw-w64-sysroot/$(MINGW_TRIPLET)
 # "mingw" or "mingw64"
 OPENSSL_PLATFORM=mingw
 # Versions of dependencies
@@ -11,16 +11,18 @@ OPENSSL_VERSION=1.0.2o
 ZLIB_VERSION=1.2.11
 BZIP2_VERSION=1.0.6
 
-WINDOWS_DEPS_DIR=windows-deps-$(MINGW_PREFIX)
-BUILD_WINDOWS_DEPS_DIR=build-windows-deps-$(MINGW_PREFIX)
-BUILD_WINDOWS_BINARY_DIR=build-windows-binary-$(MINGW_PREFIX)
+WINDOWS_DEPS_DIR=windows-deps-$(MINGW_TRIPLET)
+BUILD_WINDOWS_DEPS_DIR=build-windows-deps-$(MINGW_TRIPLET)
+BUILD_WINDOWS_BINARY_DIR=build-windows-binary-$(MINGW_TRIPLET)
+
+PACKAGE_NAME_NOEXT?=luarocks-dev-windows-i686
 
 windows-binary: $(WINDOWS_DEPS_DIR)/lib/liblua.a $(WINDOWS_DEPS_DIR)/lib/libssl.a $(WINDOWS_DEPS_DIR)/lib/libz.a $(WINDOWS_DEPS_DIR)/lib/libbz2.a
-	STATIC_GCC_AR=$(MINGW_PREFIX)-ar \
-	STATIC_GCC_RANLIB=$(MINGW_PREFIX)-ranlib \
-	STATIC_GCC_CC=$(MINGW_PREFIX)-gcc \
+	STATIC_GCC_AR=$(MINGW_TRIPLET)-ar \
+	STATIC_GCC_RANLIB=$(MINGW_TRIPLET)-ranlib \
+	STATIC_GCC_CC=$(MINGW_TRIPLET)-gcc \
 	LUAROCKS_CROSS_COMPILING=1 \
-	$(MAKE) binary LUA_DIR=$(CURDIR)/$(WINDOWS_DEPS_DIR) CC=$(MINGW_PREFIX)-gcc NM=$(MINGW_PREFIX)-nm BINARY_PLATFORM=windows buildbinarydir=$(BUILD_WINDOWS_BINARY_DIR) BINARY_SYSROOT=$(MINGW_SYSROOT)
+	$(MAKE) binary LUA_DIR=$(CURDIR)/$(WINDOWS_DEPS_DIR) CC=$(MINGW_TRIPLET)-gcc NM=$(MINGW_TRIPLET)-nm BINARY_PLATFORM=windows buildbinarydir=$(BUILD_WINDOWS_BINARY_DIR) BINARY_SYSROOT=$(MINGW_SYSROOT) TRIPLET=$(MINGW_TRIPLET)
 
 $(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION).tar.gz:
 	mkdir -p $(@D)
@@ -28,7 +30,7 @@ $(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION).tar.gz:
 $(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION): $(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION).tar.gz
 	cd $(BUILD_WINDOWS_DEPS_DIR) && tar zxvpf lua-$(LIBLUA_VERSION).tar.gz
 $(WINDOWS_DEPS_DIR)/lib/liblua.a: $(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION)
-	$(MAKE) -C "$(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION)/src" LUA_A=liblua.a CC=$(MINGW_PREFIX)-gcc AR="$(MINGW_PREFIX)-ar rcu" RANLIB=$(MINGW_PREFIX)-ranlib SYSCFLAGS= SYSLIBS= SYSLDFLAGS= liblua.a
+	$(MAKE) -C "$(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION)/src" LUA_A=liblua.a CC=$(MINGW_TRIPLET)-gcc AR="$(MINGW_TRIPLET)-ar rcu" RANLIB=$(MINGW_TRIPLET)-ranlib SYSCFLAGS= SYSLIBS= SYSLDFLAGS= liblua.a
 	mkdir -p $(WINDOWS_DEPS_DIR)/include
 	cd $(BUILD_WINDOWS_DEPS_DIR)/lua-$(LIBLUA_VERSION)/src && cp lauxlib.h lua.h lua.hpp luaconf.h lualib.h ../../../$(WINDOWS_DEPS_DIR)/include
 	mkdir -p $(WINDOWS_DEPS_DIR)/lib
@@ -40,7 +42,7 @@ $(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION).tar.gz:
 $(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION): $(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION).tar.gz
 	cd $(BUILD_WINDOWS_DEPS_DIR) && tar zxvpf openssl-$(OPENSSL_VERSION).tar.gz
 $(WINDOWS_DEPS_DIR)/lib/libssl.a: $(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION)
-	cd $(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION) && ./Configure --prefix=$(CURDIR)/$(WINDOWS_DEPS_DIR) --cross-compile-prefix=$(MINGW_PREFIX)- $(OPENSSL_PLATFORM)
+	cd $(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION) && ./Configure --prefix=$(CURDIR)/$(WINDOWS_DEPS_DIR) --cross-compile-prefix=$(MINGW_TRIPLET)- $(OPENSSL_PLATFORM)
 	$(MAKE) -C "$(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION)"
 	$(MAKE) -C "$(BUILD_WINDOWS_DEPS_DIR)/openssl-$(OPENSSL_VERSION)" install_sw
 
@@ -50,12 +52,12 @@ $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION).tar.gz:
 $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION): $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION).tar.gz
 	cd $(BUILD_WINDOWS_DEPS_DIR) && tar zxvpf zlib-$(ZLIB_VERSION).tar.gz
 $(WINDOWS_DEPS_DIR)/lib/libz.a: $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION)
-	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && sed -ie "s,dllwrap,$(MINGW_PREFIX)-dllwrap," win32/Makefile.gcc
+	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && sed -ie "s,dllwrap,$(MINGW_TRIPLET)-dllwrap," win32/Makefile.gcc
 	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && ./configure --prefix=$(CURDIR)/$(WINDOWS_DEPS_DIR) --static
-	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && $(MAKE) -f win32/Makefile.gcc CC=$(MINGW_PREFIX)-gcc AR=$(MINGW_PREFIX)-ar RC=$(MINGW_PREFIX)-windres STRIP=$(MINGW_PREFIX)-strip IMPLIB=libz.dll.a
+	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && $(MAKE) -f win32/Makefile.gcc CC=$(MINGW_TRIPLET)-gcc AR=$(MINGW_TRIPLET)-ar RC=$(MINGW_TRIPLET)-windres STRIP=$(MINGW_TRIPLET)-strip IMPLIB=libz.dll.a
 	mkdir -p $(WINDOWS_DEPS_DIR)/include
 	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && cp zlib.h zconf.h ../../$(WINDOWS_DEPS_DIR)/include
-	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && $(MINGW_PREFIX)-strip -g libz.a
+	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && $(MINGW_TRIPLET)-strip -g libz.a
 	mkdir -p $(@D)
 	cd $(BUILD_WINDOWS_DEPS_DIR)/zlib-$(ZLIB_VERSION) && cp libz.a ../../$(WINDOWS_DEPS_DIR)/lib
 
@@ -65,12 +67,15 @@ $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION).tar.gz:
 $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION): $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION).tar.gz
 	cd $(BUILD_WINDOWS_DEPS_DIR) && tar zxvpf bzip2-$(BZIP2_VERSION).tar.gz
 $(WINDOWS_DEPS_DIR)/lib/libbz2.a: $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION)
-	$(MAKE) -C "$(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION)" libbz2.a CC=$(MINGW_PREFIX)-gcc AR=$(MINGW_PREFIX)-ar RANLIB=$(MINGW_PREFIX)-ranlib
+	$(MAKE) -C "$(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION)" libbz2.a CC=$(MINGW_TRIPLET)-gcc AR=$(MINGW_TRIPLET)-ar RANLIB=$(MINGW_TRIPLET)-ranlib
 	mkdir -p $(WINDOWS_DEPS_DIR)/include
 	cd $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION) && cp bzlib.h ../../$(WINDOWS_DEPS_DIR)/include
-	cd $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION) && $(MINGW_PREFIX)-strip -g libbz2.a
+	cd $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION) && $(MINGW_TRIPLET)-strip -g libbz2.a
 	mkdir -p $(WINDOWS_DEPS_DIR)/lib
 	cd $(BUILD_WINDOWS_DEPS_DIR)/bzip2-$(BZIP2_VERSION) && cp libbz2.a ../../$(WINDOWS_DEPS_DIR)/lib
+
+windows-pack:
+	$(MAKE) pack-binary LUA_DIR=$(CURDIR)/$(WINDOWS_DEPS_DIR) CC=$(MINGW_TRIPLET)-gcc NM=$(MINGW_TRIPLET)-nm BINARY_PLATFORM=windows buildbinarydir=$(BUILD_WINDOWS_BINARY_DIR) BINARY_SYSROOT=$(MINGW_SYSROOT) packbinarydir=$(PACKAGE_NAME_NOEXT) packbinaryfile=$(PACKAGE_NAME_NOEXT).zip exeext=.exe
 
 windows-clean:
 	rm -rf $(WINDOWS_DEPS_DIR) $(BUILD_WINDOWS_BINARY_DIR)

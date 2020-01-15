@@ -35,7 +35,7 @@ local MY_PLATFORM = arg[7] or "unix"
 local CC = arg[8] or "gcc"
 local NM = arg[9] or "nm"
 local CROSSCOMPILER_SYSROOT = arg[10] or "/usr/lib/mingw-w64-sysroot/i686-w64-mingw32"
-local TRIPLET = arg[11] or CROSSCOMPILER_SYSROOT:gsub(".*/", "")
+local TRIPLET = arg[11]
 local PROCESSOR = arg[12] or TRIPLET:gsub("%-.*", "")
 if PROCESSOR == "i686" then
    PROCESSOR = "x86"

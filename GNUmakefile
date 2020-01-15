@@ -17,6 +17,8 @@ buildbinarydir = ./build-binary
 
 LUAROCKS_FILES = $(shell find src/luarocks/ -type f -name '*.lua')
 
+TRIPLET = $(shell echo `uname -m`-`uname -s | tr 'A-Z' 'a-z'`)
+
 all: build
 
 # ----------------------------------------
@@ -93,11 +95,11 @@ binary: luarocks $(buildbinarydir)/luarocks.exe $(buildbinarydir)/luarocks-admin
 
 $(buildbinarydir)/luarocks.exe: src/bin/luarocks $(LUAROCKS_FILES)
 	(unset $(LUA_ENV_VARS); \
-	"$(LUA)" binary/all_in_one "$<" "$(LUA_DIR)" "^src/luarocks/admin/" "$(luarocksconfdir)" "$(@D)" "$(FORCE_CONFIG)" $(BINARY_PLATFORM) $(CC) $(NM) $(BINARY_SYSROOT))
+	"$(LUA)" binary/all_in_one "$<" "$(LUA_DIR)" "^src/luarocks/admin/" "$(luarocksconfdir)" "$(@D)" "$(FORCE_CONFIG)" $(BINARY_PLATFORM) $(CC) $(NM) $(BINARY_SYSROOT) $(TRIPLET))
 
 $(buildbinarydir)/luarocks-admin.exe: src/bin/luarocks-admin $(LUAROCKS_FILES)
 	(unset $(LUA_ENV_VARS); \
-	"$(LUA)" binary/all_in_one "$<" "$(LUA_DIR)" "^src/luarocks/cmd/" "$(luarocksconfdir)" "$(@D)" "$(FORCE_CONFIG)" $(BINARY_PLATFORM) $(CC) $(NM) $(BINARY_SYSROOT))
+	"$(LUA)" binary/all_in_one "$<" "$(LUA_DIR)" "^src/luarocks/cmd/" "$(luarocksconfdir)" "$(@D)" "$(FORCE_CONFIG)" $(BINARY_PLATFORM) $(CC) $(NM) $(BINARY_SYSROOT) $(TRIPLET))
 
 # ----------------------------------------
 # Regular install
@@ -145,6 +147,16 @@ install-binary: $(INSTALL_BINARY_FILES)
 	$(INSTALL) "$(buildbinarydir)/luarocks-admin.exe" "$(DESTDIR)$(bindir)/luarocks-admin"
 
 # ----------------------------------------
+# Binary pack
+# ----------------------------------------
+
+pack-binary: binary
+	mkdir -p "$(packbinarydir)"
+	$(INSTALL) "$(buildbinarydir)/luarocks.exe" "$(packbinarydir)/luarocks$(exeext)"
+	$(INSTALL) "$(buildbinarydir)/luarocks-admin.exe" "$(packbinarydir)/luarocks-admin$(exeext)"
+	cd "$(packbinarydir)" && zip "$(packbinaryfile)" "luarocks$(exeext)" "luarocks-admin$(exeext)"
+
+# ----------------------------------------
 # Bootstrap install
 # ----------------------------------------
 
@@ -157,16 +169,24 @@ bootstrap: luarocks $(DESTDIR)$(luarocksconfdir)/config-$(LUA_VERSION).lua
 
 windows-binary: windows-binary-32 windows-binary-64
 
+windows-pack: windows-pack-32 windows-pack-64
+
 windows-clean: windows-clean-32 windows-clean-64
 
 windows-binary-32: luarocks
 	$(MAKE) -f binary/Makefile.windows windows-binary MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw
 
-windows-clean-32:
-	$(MAKE) -f binary/Makefile.windows windows-clean MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw
-
 windows-binary-64: luarocks
 	$(MAKE) -f binary/Makefile.windows windows-binary MINGW_PREFIX=x86_64-w64-mingw32 OPENSSL_PLATFORM=mingw64
+
+windows-pack-32: windows-binary-32
+	$(MAKE) -f binary/Makefile.windows windows-pack MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw PACKAGE_NAME_NOEXT=luarocks-dev-windows-32
+
+windows-pack-64: windows-binary-64
+	$(MAKE) -f binary/Makefile.windows windows-pack MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw64 PACKAGE_NAME_NOEXT=luarocks-dev-windows-64
+
+windows-clean-32:
+	$(MAKE) -f binary/Makefile.windows windows-clean MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw
 
 windows-clean-64:
 	$(MAKE) -f binary/Makefile.windows windows-clean MINGW_PREFIX=x86_64-w64-mingw32 OPENSSL_PLATFORM=mingw64
