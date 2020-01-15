@@ -1,5 +1,4 @@
 language: python
-python: 3.7.1
 
 cache:
   directories:
@@ -159,6 +158,7 @@ jobs:
           - mingw-w64
       script: *binaries_script
       os: linux
+      python: 3.7.1
       env:
         - OS="windows"
         - ARCH="i686"
@@ -177,6 +177,7 @@ jobs:
           - mingw-w64
       script: *binaries_script
       os: linux
+      python: 3.7.1
       env:
         - OS="windows"
         - ARCH="x86_64"
@@ -191,6 +192,7 @@ jobs:
 #      if: type=cron
       script: *binaries_script
       os: linux
+      python: 3.7.1
       env:
         - OS="linux"
         - ARCH="x86_64"
