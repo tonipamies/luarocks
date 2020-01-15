@@ -457,7 +457,7 @@ local function main()
          LIBFLAG = "-static",
       },
       platforms = if_platform("windows", { "windows", "win32", "mingw32" }),
-      external_deps_dirs = if_platform("windows", { CROSSCOMPILER_SYSROOT, fs.current_dir() .. "/windows-deps-" .. TRIPLET }),
+      external_deps_dirs = if_platform("windows", { CROSSCOMPILER_SYSROOT, fs.current_dir() .. "/windows-deps-" .. PROCESSOR }),
    })
    
    local dependencies = {
