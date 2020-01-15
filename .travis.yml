@@ -39,9 +39,9 @@ integration_script: &integration_script
 binaries_script: &binaries_script
   - ./configure --with-lua=lua_install
   - make
-  - make $BINARY_TARGET MINGW_SYSROOT=/usr/$ARCH-w64-mingw32/lib
-  - make $PACK_TARGET packbinarydir=luarocks-$VERSION-$OS-$ARCH packbinaryfile=luarocks-$VERSION-$OS-$ARCH.zip buildbinarydir=$BUILD_BINARY_DIR exeext=$EXEEXT
-  - curl -T luarocks-$VERSION-$OS-$ARCH/luarocks-$VERSION-$OS-$ARCH.zip -X PUT -u $BINTRAY_USER:$BINTRAY_API_KEY "https://api.bintray.com/content/luarocks/luarocks/luarocks-$OS$FLAVOR/$VERSION/luarocks-$VERSION-$OS-$ARCH.zip?publish=1"
+  - make $BINARY_TARGET MINGW_SYSROOT=/usr/$BINARYARCH-w64-mingw32/lib $EXTRA_VARS
+  - make $PACK_TARGET packbinarydir=luarocks-$VERSION-$BINARYOS-$BINARYARCH packbinaryfile=luarocks-$VERSION-$BINARYOS-$BINARYARCH.zip buildbinarydir=$BUILD_BINARY_DIR exeext=$EXEEXT
+  - curl -T luarocks-$VERSION-$BINARYOS-$BINARYARCH/luarocks-$VERSION-$BINARYOS-$BINARYARCH.zip -X PUT -u $BINTRAY_USER:$BINTRAY_API_KEY "https://api.bintray.com/content/luarocks/luarocks/luarocks-$BINARYOS$FLAVOR/$VERSION/luarocks-$VERSION-$BINARYOS-$BINARYARCH.zip?publish=1"
 
 jobs:
   include:
@@ -160,12 +160,12 @@ jobs:
       script: *binaries_script
       os: linux
       env:
-        - OS="windows"
-        - ARCH="i686"
+        - BINARYOS="windows"
+        - BINARYARCH="i686"
         - FLAVOR="-nightly"
         - BINARY_TARGET="windows-binary-32"
         - PACK_TARGET="windows-pack-32"
-        - BUILD_BINARY_DIR="build-windows-binary-$ARCH"
+        - BUILD_BINARY_DIR="build-windows-binary-$BINARYARCH"
         - EXEEXT=".exe"
         - LUA="lua=5.3"
         - VERSION="dev-$(date +%Y-%m-%d)"
@@ -178,12 +178,12 @@ jobs:
       script: *binaries_script
       os: linux
       env:
-        - OS="windows"
-        - ARCH="x86_64"
+        - BINARYOS="windows"
+        - BINARYARCH="x86_64"
         - FLAVOR="-nightly"
         - BINARY_TARGET="windows-binary-64"
         - PACK_TARGET="windows-pack-64"
-        - BUILD_BINARY_DIR="build-windows-binary-$ARCH"
+        - BUILD_BINARY_DIR="build-windows-binary-$BINARYARCH"
         - EXEEXT=".exe"
         - LUA="lua=5.3"
         - VERSION="dev-$(date +%Y-%m-%d)"
@@ -192,8 +192,8 @@ jobs:
       script: *binaries_script
       os: linux
       env:
-        - OS="linux"
-        - ARCH="x86_64"
+        - BINARYOS="linux"
+        - BINARYARCH="x86_64"
         - FLAVOR="-nightly"
         - BINARY_TARGET=binary
         - PACK_TARGET=pack-binary
@@ -206,10 +206,16 @@ jobs:
       script: *binaries_script
       language: generic
       os: osx
+      addons:
+        homebrew:
+          packages:
+            zlib
+            openssl
       env:
-        - OS="macos"
-        - ARCH="x86_64"
+        - BINARYOS="macos"
+        - BINARYARCH="x86_64"
         - FLAVOR="-nightly"
+        - EXTRA_VARS="OPENSSL_DIR=/usr/local/opt"
         - BINARY_TARGET=binary
         - PACK_TARGET=pack-binary
         - BUILD_BINARY_DIR=build-binary
