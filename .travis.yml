@@ -18,6 +18,12 @@ cache:
   - windows-deps-x86_64-w64-mingw32
   - build-windows-deps-x86_64-w64-mingw32
 
+env:
+  - BINARY_TARGET=binary
+  - PACK_TARGET=pack-binary
+  - BUILD_BINARY_DIR=build-binary
+  - EXEEXT=""
+
 smoke_script: &smoke_script
   - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
   - ./makedist $BRANCH
@@ -36,16 +42,12 @@ integration_script: &integration_script
   - busted -o gtest --exclude-tags=gpg,git,unit --verbose -Xhelper "lua_dir=$PWD/lua_install,travis"
   - busted -o gtest --exclude-tags=gpg,git,unit --verbose -Xhelper "lua_dir=$PWD/lua_install,travis,env=full"
 
-deploy_script: &deploy_script
-  - sudo apt-get install mingw-w64
+binaries_script: &binaries_script
   - ./configure --with-lua=lua_install
   - make
-  - make windows-binary-32 MINGW_SYSROOT=/usr/i686-w64-mingw32/lib
-  - make windows-binary-64 MINGW_SYSROOT=/usr/x86_64-w64-mingw32/lib
-  - make windows-pack-32 PACKAGE_NAME_NOEXT=luarocks-dev-$(date +%Y-%m-%d)-windows-32.zip
-  - make windows-pack-64 PACKAGE_NAME_NOEXT=luarocks-dev-$(date +%Y-%m-%d)-windows-64.zip
-  - curl -T luarocks-dev-windows-32/luarocks-dev-windows-32.zip -X PUT -u $BINTRAY_USER:$BINTRAY_API_KEY "https://api.bintray.com/content/luarocks/luarocks/luarocks-windows-nightly/`date +%Y-%m-%d`/luarocks-dev-`date +%Y-%m-%d`-windows-32.zip?publish=1"
-  - curl -T luarocks-dev-windows-64/luarocks-dev-windows-64.zip -X PUT -u $BINTRAY_USER:$BINTRAY_API_KEY "https://api.bintray.com/content/luarocks/luarocks/luarocks-windows-nightly/`date +%Y-%m-%d`/luarocks-dev-`date +%Y-%m-%d`-windows-64.zip?publish=1"
+  - make $BINARY_TARGET MINGW_SYSROOT=/usr/$(ARCH)-w64-mingw32/lib
+  - make $PACK_TARGET packbinarydir=luarocks-$VERSION-$OS-$ARCH packbinaryfile=luarocks-$VERSION-$OS-$ARCH.zip buildbinarydir=$BUILD_BINARY_DIR exeext=$EXEEXT
+  - curl -T luarocks-$VERSION-$OS-$ARCH/luarocks-$VERSION-$OS-$ARCH.zip -X PUT -u $BINTRAY_USER:$BINTRAY_API_KEY "https://api.bintray.com/content/luarocks/luarocks/luarocks-$OS$FLAVOR/$VERSION/luarocks-$VERSION-$OS-$ARCH.zip?publish=1"
 
 jobs:
   include:
@@ -156,16 +158,61 @@ jobs:
 #        - LUA="luajit=2.1"
 #      language: generic
     - stage: deploy
-      #if: type=cron
+#      if: type=cron
       addons:
         apt:
           packages:
           - mingw-w64
-      script: *deploy_script
+      script: *binaries_script
       os: linux
       env:
+        - OS="windows"
+        - ARCH="i686"
+        - FLAVOR="-nightly"
+        - BINARY_TARGET="windows-binary-32"
+        - PACK_TARGET="windows-pack-32"
+        - BUILD_BINARY_DIR="build-windows-binary-$(ARCH)"
+        - EXEEXT=".exe"
         - LUA="lua=5.3"
-        - LUAROCKS_DEPLOY="yes"
+        - VERSION="dev-$(date +%Y-%m-%d)"
+    - stage: deploy
+#      if: type=cron
+      addons:
+        apt:
+          packages:
+          - mingw-w64
+      script: *binaries_script
+      os: linux
+      env:
+        - OS="windows"
+        - ARCH="x86_64"
+        - FLAVOR="-nightly"
+        - BINARY_TARGET="windows-binary-64"
+        - PACK_TARGET="windows-pack-64"
+        - BUILD_BINARY_DIR="build-windows-binary-$(ARCH)"
+        - EXEEXT=".exe"
+        - LUA="lua=5.3"
+        - VERSION="dev-$(date +%Y-%m-%d)"
+    - stage: deploy
+#      if: type=cron
+      script: *binaries_script
+      os: linux
+      env:
+        - OS="linux"
+        - ARCH="x86_64"
+        - FLAVOR="-nightly"
+        - LUA="lua=5.3"
+        - VERSION="dev-$(date +%Y-%m-%d)"
+    - stage: deploy
+#      if: type=cron
+      script: *binaries_script
+      os: osx
+      env:
+        - OS="macos"
+        - ARCH="x86_64"
+        - FLAVOR="-nightly"
+        - LUA="lua=5.3"
+        - VERSION="dev-$(date +%Y-%m-%d)"
 
 before_install:
   - if [ ! -f lua_install/bin/luarocks ]; then pip3 install hererocks; fi

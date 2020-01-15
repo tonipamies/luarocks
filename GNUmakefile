@@ -9,15 +9,18 @@ BINARY_PLATFORM = unix
 
 SHEBANG = \#!$(LUA_BINDIR)/$(LUA_INTERPRETER)
 LUA = $(LUA_BINDIR)/$(LUA_INTERPRETER)
+NM ?= nm
 luarocksconfdir = $(sysconfdir)/luarocks
 luadir = $(datarootdir)/lua/$(LUA_VERSION)
 builddir = ./build
 buildbinarydir = ./build-binary
-
+BINARY_SYSROOT ?= /usr
 
 LUAROCKS_FILES = $(shell find src/luarocks/ -type f -name '*.lua')
 
-TRIPLET = $(shell echo `uname -m`-`uname -s | tr 'A-Z' 'a-z'`)
+VERSION = dev
+OS = $(shell uname -s | tr 'A-Z' 'a-z')
+TRIPLET = $(shell uname -m)-$(OS)
 
 all: build
 
@@ -174,22 +177,22 @@ windows-pack: windows-pack-32 windows-pack-64
 windows-clean: windows-clean-32 windows-clean-64
 
 windows-binary-32: luarocks
-	$(MAKE) -f binary/Makefile.windows windows-binary MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw
+	$(MAKE) -f binary/Makefile.windows windows-binary ARCH=i686 OPENSSL_PLATFORM=mingw
 
 windows-binary-64: luarocks
-	$(MAKE) -f binary/Makefile.windows windows-binary MINGW_PREFIX=x86_64-w64-mingw32 OPENSSL_PLATFORM=mingw64
+	$(MAKE) -f binary/Makefile.windows windows-binary ARCH=x86_64 OPENSSL_PLATFORM=mingw64
 
 windows-pack-32: windows-binary-32
-	$(MAKE) -f binary/Makefile.windows windows-pack MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw PACKAGE_NAME_NOEXT=luarocks-dev-windows-32
+	$(MAKE) -f binary/Makefile.windows windows-pack ARCH=i686 OPENSSL_PLATFORM=mingw
 
 windows-pack-64: windows-binary-64
-	$(MAKE) -f binary/Makefile.windows windows-pack MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw64 PACKAGE_NAME_NOEXT=luarocks-dev-windows-64
+	$(MAKE) -f binary/Makefile.windows windows-pack ARCH=x86_64 OPENSSL_PLATFORM=mingw64
 
 windows-clean-32:
-	$(MAKE) -f binary/Makefile.windows windows-clean MINGW_PREFIX=i686-w64-mingw32 OPENSSL_PLATFORM=mingw
+	$(MAKE) -f binary/Makefile.windows windows-clean ARCH=i686 OPENSSL_PLATFORM=mingw
 
 windows-clean-64:
-	$(MAKE) -f binary/Makefile.windows windows-clean MINGW_PREFIX=x86_64-w64-mingw32 OPENSSL_PLATFORM=mingw64
+	$(MAKE) -f binary/Makefile.windows windows-clean ARCH=x86_64 OPENSSL_PLATFORM=mingw64
 
 # ----------------------------------------
 # Clean
