@@ -897,7 +897,7 @@ describe("LuaRocks build #unit", function()
                if test_env.MINGW then
                   os.execute("gcc -shared -o " .. fdir .. "/libfixturedep.dll -Wl,--out-implib," .. fdir .."/libfixturedep.a " .. fdir .. "/fixturedep.c")
                else
-                  os.execute("cl /LD " .. fdir .. "\\fixturedep.c /link /out:" .. fdir .. "\\fixturedep.dll")
+                  os.execute("cl " .. fdir .. "\\fixturedep.c /link /export:fixturedep_fn /out:" .. fdir .. "\\fixturedep.dll /implib:" .. fdir .. "\\fixturedep.lib")
                end
             elseif test_env.TEST_TARGET_OS == "linux" then
                os.execute("gcc -shared -o " .. fdir .. "/libfixturedep.so " .. fdir .. "/fixturedep.c")

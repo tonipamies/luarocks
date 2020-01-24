@@ -1,4 +1,4 @@
 
-int fixturedep() {
+int fixturedep_fn() {
    return 0;
 }
